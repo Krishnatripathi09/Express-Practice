@@ -1,8 +1,11 @@
 const express = require("express");
 const { adminAuth } = require("../middleware/auth");
 const connectDB = require("../config/database");
-const app = express();
+const { UserModel } = require("../models/user");
+const { validateSignUpData } = require("../utils/validation");
 
+const app = express();
+app.use(express.json());
 const PORT = 3000;
 
 connectDB()
@@ -18,15 +21,28 @@ connectDB()
     console.log("Error Occured " + err);
   });
 
-app.get("/user", (req, res) => {
-  res.send("Get rooute is Responding");
+app.post("/signup", async (req, res) => {
+  try {
+    validateSignUpData(req);
+    const { firstName, lastName, email, password } = req.body;
+
+    const data = await UserModel({
+      firstName,
+      lastName,
+      email,
+      password,
+    });
+    await data.save();
+    res.send("Data Saved SuccessFully");
+  } catch (err) {
+    res.status(400).send("Error Occured " + err);
+  }
 });
 
-app.get("/admin/data", adminAuth, (req, res) => {
-  throw new Error("Error occured");
-  res.send("Got all the Admin Data");
-});
+app.delete("/user", async (req, res) => {
+  const id = req.body.id;
+  // const name = req.body.firstName;
+  const user = await UserModel.findOneAndDelete(id);
 
-app.use("/", (err, req, res, next) => {
-  res.status(400).send("something went  wrong " + err);
+  res.send("User Data Found " + user);
 });
