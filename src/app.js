@@ -54,12 +54,10 @@ app.post("/signin", async (req, res) => {
     if (!user) {
       throw new Error("User Not Found");
     }
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await user.verifyPWD(password);
 
     if (isValidPassword) {
-      const token = await jwt.sign({ id: user.id }, "MysecretToken789", {
-        expiresIn: "1h",
-      });
+      const token = await user.signJWT();
       res.cookie("token", token, {
         expires: new Date(Date.now() + 3600000),
         httpOnly: true,
