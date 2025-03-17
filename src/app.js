@@ -2,11 +2,15 @@ const express = require("express");
 const { adminAuth } = require("../middleware/auth");
 const connectDB = require("../config/database");
 const { UserModel } = require("../models/user");
+const cookieparser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const { userAuth } = require("../middleware/auth");
 const { validateSignUpData } = require("../utils/validation");
 
 const app = express();
 app.use(express.json());
+app.use(cookieparser());
 const PORT = 3000;
 
 connectDB()
@@ -50,11 +54,18 @@ app.post("/signin", async (req, res) => {
     if (!user) {
       throw new Error("User Not Found");
     }
-
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (isValidPassword) {
-      res.cookie("token", "weruiomnbvcxsw3456789098765432mbvcdsdtyuikjhg");
+      const token = await jwt.sign({ id: user.id }, "MysecretToken789", {
+        expiresIn: "1h",
+      });
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 3600000),
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+      });
       res.send("Login SuccessFull");
     } else {
       res.status(401).send("Please Enter Valid Password");
@@ -64,10 +75,7 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-app.delete("/user", async (req, res) => {
-  const id = req.body.id;
-  // const name = req.body.firstName;
-  const user = await UserModel.findOneAndDelete(id);
-
-  res.send("User Data Found " + user);
+app.get("/user", userAuth, async (req, res) => {
+  const user = req.user;
+  res.send("Logged-In User Is :" + user);
 });

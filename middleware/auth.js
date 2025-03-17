@@ -1,18 +1,30 @@
-const express = require("express");
-const app = express();
+const jwt = require("jsonwebtoken");
+const { UserModel } = require("../models/user");
 
-const adminAuth = app.use("/admin", (req, res, next) => {
-  const token = "xyz";
+const userAuth = async (req, res, next) => {
+  try {
+    const { token } = req.cookies;
 
-  const isAdminAuthorized = token === "xyz";
+    if (!token) {
+      throw new Error("Session Not Valid !! Please Log-In Again");
+    }
+    const decodedMSG = await jwt.verify(token, "MysecretToken789");
 
-  if (isAdminAuthorized) {
+    const { id } = decodedMSG;
+
+    const user = await UserModel.findById(id).select(
+      "firstName lastName email"
+    );
+    if (!user) {
+      throw new Error("User Not Found !!");
+    }
+    req.user = user;
     next();
-  } else {
-    res.status(401).send("Un-Authorized- Please Log-In Again");
+  } catch (err) {
+    res.status(401).send("Error Occured :" + err.message);
   }
-});
+};
 
 module.exports = {
-  adminAuth,
+  userAuth,
 };
