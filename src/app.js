@@ -114,3 +114,11 @@ app.get("/user", userAuth, async (req, res) => {
   const user = req.user;
   res.send("Logged-In User Is :" + user);
 });
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("token", null, {
+    expires: new Date(Date.now()),
+  });
+
+  res.send("Log-Out Success-Fully");
+});
